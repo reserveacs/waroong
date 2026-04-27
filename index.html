@@ -478,13 +478,12 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, collection, query, where, getDocs, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     const firebaseConfig = {
-      apiKey: "AIzaSyCbcZc_ttieYHNqgDQ-jUWU_GmTtxxXowA",
-      authDomain: "newwad-76f51.firebaseapp.com",
-      projectId: "newwad-76f51",
-      storageBucket: "newwad-76f51.firebasestorage.app",
-      messagingSenderId: "718634797726",
-      appId: "1:718634797726:web:b560cc9931ccf8a155c98f",
-      measurementId: "G-DC2FBP946Y"
+      apiKey: "AIzaSyAEWL8fSkUZJ86QxPYX3YXyVT_CC1Ot2HU",
+      authDomain: "revisi-dcecb.firebaseapp.com",
+      projectId: "revisi-dcecb",
+      storageBucket: "revisi-dcecb.firebasestorage.app",
+      messagingSenderId: "26478358911",
+      appId: "1:26478358911:web:c5e01db44a5c3d4a5cea4a"
     };
     const app = initializeApp(firebaseConfig);
     window.db = getFirestore(app);
@@ -610,7 +609,7 @@
         </div>
         <div id="msgs"></div>
         <div class="inbar">
-          <textarea id="chat-in" rows="1" placeholder="e.g. indomie goreng 3, es teh 4 · or: something salty 21k · or: sweet snack max 15k"></textarea>
+          <textarea id="chat-in" rows="1" placeholder="e.g. salty food below 25k · sweet drinks · spicy food under 20000 · indomie goreng 3"></textarea>
           <button class="sbtn" onclick="sendMsg()">➤</button>
         </div>
       </div>
@@ -761,8 +760,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <!-- //this is the maps  -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     let me = null, pendOrd = null, selAi = 0, topupSel = 0, selectedPayment = 'emoney';
     let regMap = null, regMk = null, mapLat = null, mapLng = null, msTimer = null;
@@ -955,7 +953,7 @@
       document.getElementById('nav-av').textContent=me.firstName?.charAt(0)?.toUpperCase()||'?';
       document.getElementById('nav-nm').textContent=me.firstName||'User';
       document.getElementById('nav-bal').textContent='Rp '+(me.balance||0).toLocaleString('id-ID');
-      addBot(`Hey <b>${me.firstName}</b>! 🌿 Welcome to <b>Waroong</b>. What are you craving today?<br><small style="color:var(--muted)">Try: <i>"indomie goreng 3"</i> or use the taste filters above!</small>`);
+      addBot(`Hey <b>${me.firstName}</b>! 🌿 Welcome to <b>Waroong</b>. What are you craving today?<br><small style="color:var(--muted)">Try: <i>"salty food below 25k"</i> · <i>"sweet drinks"</i> · <i>"spicy food under 20000"</i> · or a specific product name!</small>`);
       refreshSidebar();
     }
 
@@ -1247,14 +1245,14 @@
       ta.value=''; ta.style.height='auto';
       addUser(text); addTyp();
       const segs=parseQ(text);
-      const groups=await Promise.all(segs.map(async seg=>({seg,products:await searchP(seg.keyword,seg.budget),qty:seg.qty})));
+      const groups=await Promise.all(segs.map(async seg=>({seg,products:await searchP(seg.keyword,seg.budget,seg.tastes||[],seg.categories||[]),qty:seg.qty})));
       rmTyp(); renderResults(groups);
     }
     function qs(btn) { document.getElementById('chat-in').value=btn.textContent.trim().replace(/^[^\w\s]*\s*/,''); sendMsg(); }
     document.getElementById('chat-in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
     document.getElementById('chat-in').addEventListener('input',function(){this.style.height='auto';this.style.height=this.scrollHeight+'px';});
 
-    /* ─── SELLER PIN [with link to seller new html]─── */
+    /* ─── SELLER PIN ─── */
     function openPinModal() { clrEP(); document.getElementById('pm-modal').classList.add('open'); setTimeout(()=>document.getElementById('ep0').focus(),80); }
     function closePM() { document.getElementById('pm-modal').classList.remove('open'); clrEP(); }
     function chkPin() {
@@ -1342,7 +1340,7 @@
     window.loadReqResults=async function(query){
       const resEl=document.getElementById('reqm-results');
       resEl.innerHTML='<i>Searching products...</i>';
-      const products=await searchP(query,null);
+      const products=await searchP(query,null,[],[]);
       if(products.length===0){
         resEl.innerHTML='<i style="font-size:13px;color:var(--muted);">No matching products yet.</i>';
       } else {
@@ -1376,39 +1374,129 @@
     }
 
     /* ─── PARSER ─── */
+    /* ─── TASTE / CATEGORY / PRICE MAPS ─── */
+    const TASTE_KEYWORDS = {
+      sweet:  ['sweet','manis','gula','coklat','chocolate','cake','kue','dessert','es krim','ice cream','pudding','sirup','madu','honey','susu','milk','teh manis','bubble','boba','donat','donut','waffle','pancake'],
+      salty:  ['salty','asin','gurih','keripik','chips','snack','kripik','crackers','kacang','nuts','pretzel'],
+      sour:   ['sour','asam','asem','jeruk','lime','lemon','tamarind','asam jawa','rujak','cuka','vinegar','pickled','acar','segar'],
+      spicy:  ['spicy','pedas','cabai','cabe','chili','sambal','balado','hot','rica','siracha','pedes'],
+      savory: ['savory','gurih','umami','nasi','rice','mie','mee','pasta','ayam','chicken','daging','beef','ikan','fish','seafood','udang','shrimp','bakso','soto','rendang','opor','gulai','sup','soup','sate','satay','kebab','burger','sandwich','pizza','goreng','fried','bakar','grilled']
+    };
+
+    const CATEGORY_KEYWORDS = {
+      Food:        ['food','makanan','makan','eat','meal','snack','jajan','cemilan','lauk','nasi','mie','rice'],
+      Drinks:      ['drink','minuman','minum','beverage','juice','jus','teh','tea','kopi','coffee','susu','milk','soda','air','water','es','ice','smoothie','boba','bubble'],
+      Skincare:    ['skincare','skin','care','serum','moisturizer','toner','sunscreen','spf','facial','wajah','muka','krim','lotion','masker','mask'],
+      Fashion:     ['fashion','baju','clothes','clothing','shirt','kaos','dress','celana','pants','jaket','jacket','outfit','pakaian'],
+      Shoes:       ['shoes','sepatu','sandal','sneakers','boots','footwear','alas kaki','heels','slip on'],
+      Sports:      ['sport','olahraga','gym','fitness','yoga','running','lari','sepeda','bicycle','jersey','alat olahraga'],
+      Electronics: ['electronics','elektronik','gadget','hp','handphone','phone','laptop','charger','kabel','cable','earphone','headphone','speaker','powerbank']
+    };
+
+    // Extract taste signals, category signals, and budget from a raw query segment
     function parseQ(raw) {
       return raw.toLowerCase().split(/\b(?:and|dan|,|&|;|\+)\b/).map(s=>s.trim()).filter(Boolean).map(seg=>{
-        const qm=seg.match(/\bx?(\d{1,2})\b/),qty=qm?parseInt(qm[1]):1;
-        const bm=seg.match(/(?:under|max|bawah|maksimal|dibawah|<)\s*(?:rp\s*)?(\d+(?:[.,]\d+)?)\s*(k?)\b/);
-        let budget=null;
-        if(bm){budget=parseFloat(bm[1].replace(',','.'));if(bm[2]==='k'&&budget<10000)budget*=1000;}
-        if(!budget){const b2=seg.match(/\b(\d+)(k)\b/);if(b2)budget=parseInt(b2[1])*1000;}
-        let kw=seg.replace(/x?\d+/g,'').replace(/(?:under|max|bawah|maksimal|dibawah|<)\s*(?:rp\s*)?\d+(?:[.,]\d+)?\s*k?/g,'').replace(/\b\d+k\b/g,'').replace(/\s+/g,' ').trim();
-        return {keyword:kw,qty,budget};
+        // Qty
+        const qm = seg.match(/\bx?(\d{1,2})\b/), qty = qm ? parseInt(qm[1]) : 1;
+
+        // Budget — supports: "under 25k", "max 25000", "below 25k", "25rb", "25ribu", "dibawah 25k", "<25000"
+        const bm = seg.match(/(?:under|max|below|bawah|maksimal|dibawah|kurang dari|<)\s*(?:rp\.?\s*)?(\d+(?:[.,]\d+)?)\s*(k|rb|ribu)?\b/);
+        let budget = null;
+        if (bm) {
+          budget = parseFloat(bm[1].replace(',', '.'));
+          if ((bm[2] === 'k' || bm[2] === 'rb' || bm[2] === 'ribu') && budget < 10000) budget *= 1000;
+        }
+        // plain "25k" or "25rb" style
+        if (!budget) {
+          const b2 = seg.match(/\b(\d+)\s*(k|rb|ribu)\b/);
+          if (b2) { budget = parseInt(b2[1]); if (budget < 10000) budget *= 1000; }
+        }
+        // plain number >= 1000 after removing price-word clutter
+        if (!budget) {
+          const b3 = seg.match(/\brp\.?\s*(\d{4,})\b/);
+          if (b3) budget = parseInt(b3[1]);
+        }
+
+        // Detect taste signals in this segment
+        const tastes = [];
+        for (const [taste, kws] of Object.entries(TASTE_KEYWORDS)) {
+          if (kws.some(k => seg.includes(k))) tastes.push(taste);
+        }
+
+        // Detect category signals
+        const categories = [];
+        for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
+          if (kws.some(k => seg.includes(k))) categories.push(cat);
+        }
+
+        // Clean keyword: remove numbers, budget phrases, taste/category trigger words so we don't pass them literally
+        let kw = seg
+          .replace(/(?:under|max|below|bawah|maksimal|dibawah|kurang dari|<)\s*(?:rp\.?\s*)?\d+(?:[.,]\d+)?\s*(?:k|rb|ribu)?\b/g, '')
+          .replace(/\brp\.?\s*\d+\b/g, '')
+          .replace(/\b\d+\s*(?:k|rb|ribu)\b/g, '')
+          .replace(/\bx?\d+\b/g, '')
+          .replace(/\b(i want|aku mau|mau|cari|find|search|kasih|berikan|show|tampilkan|sesuatu yang|something|any|ada gak|ada tidak)\b/g, '')
+          .replace(/\s+/g, ' ').trim();
+
+        return { keyword: kw, qty, budget, tastes, categories };
       });
     }
 
-    /* ─── PRODUCT SEARCH ─── */
-    async function searchP(keyword,budget) {
-      if(!window.db) return [];
+    /* ─── PRODUCT SEARCH — taste + category + name + price aware ─── */
+    async function searchP(keyword, budget, tastes = [], categories = []) {
+      if (!window.db) return [];
       try {
-        const snap=await W().getDocs(W().collection(D(),'products'));
-        const searchStr=keyword.toLowerCase().trim();
-        const kws=searchStr.split(/\s+/).filter(k=>k.length>1);
-        let res=[];
-        snap.forEach(d=>{
-          const p={id:d.id,...d.data()};
-          const nm=(p.name||'').toLowerCase().trim();
-          let score=0;
-          if(nm===searchStr)score+=50;
-          else if(nm.includes(searchStr))score+=20;
-          kws.forEach(k=>{if(nm.includes(k))score+=3;});
-          if(budget&&p.price>budget)score=0;
-          if(score>0&&(p.stock||0)>0)res.push({...p,score});
+        const snap = await W().getDocs(W().collection(D(), 'products'));
+        const searchStr = keyword.toLowerCase().trim();
+        const kws = searchStr.split(/\s+/).filter(k => k.length > 1);
+        const isTasteOrCatQuery = tastes.length > 0 || categories.length > 0;
+        let res = [];
+
+        snap.forEach(d => {
+          const p = { id: d.id, ...d.data() };
+          if ((p.stock || 0) === 0) return;
+          if (budget && p.price > budget) return;
+
+          const nm   = (p.name        || '').toLowerCase();
+          const desc = (p.description || '').toLowerCase();
+          const cat  = (p.category    || '').toLowerCase();
+          const taste= (p.taste       || '').toLowerCase();
+          const full = `${nm} ${desc} ${cat} ${taste}`;
+
+          let score = 0;
+
+          // ── Name / keyword matching ──
+          if (searchStr && searchStr.length > 1) {
+            if (nm === searchStr)          score += 50;
+            else if (nm.includes(searchStr)) score += 20;
+            kws.forEach(k => { if (full.includes(k)) score += 3; });
+          }
+
+          // ── Taste matching ──
+          for (const t of tastes) {
+            const tKws = TASTE_KEYWORDS[t] || [t];
+            if (tKws.some(k => full.includes(k))) score += 15;
+          }
+
+          // ── Category matching ──
+          for (const c of categories) {
+            if (cat === c.toLowerCase() || full.includes(c.toLowerCase())) score += 12;
+            // also check the CATEGORY_KEYWORDS list itself
+            const catKws = CATEGORY_KEYWORDS[c] || [];
+            if (catKws.some(k => full.includes(k))) score += 8;
+          }
+
+          // If query was purely taste/category (no keyword), any matching product counts
+          if (isTasteOrCatQuery && score === 0) return;
+          // If query had a keyword but score is still 0, skip
+          if (!isTasteOrCatQuery && score === 0) return;
+
+          res.push({ ...p, score });
         });
-        res.sort((a,b)=>b.score-a.score||a.price-b.price);
-        return res.slice(0,5);
-      } catch(e){console.error(e);return [];}
+
+        res.sort((a, b) => b.score - a.score || a.price - b.price);
+        return res.slice(0, 8);
+      } catch (e) { console.error(e); return []; }
     }
 
     function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
