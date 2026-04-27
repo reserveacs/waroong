@@ -1449,7 +1449,8 @@
         const snap = await W().getDocs(W().collection(D(), 'products'));
         const searchStr = keyword.toLowerCase().trim();
         const kws = searchStr.split(/\s+/).filter(k => k.length > 1);
-        const isTasteOrCatQuery = tastes.length > 0 || categories.length > 0;
+        const hasKeyword = searchStr.length > 1;
+        const isTasteOrCatOnly = !hasKeyword && (tastes.length > 0 || categories.length > 0);
         let res = [];
 
         snap.forEach(d => {
@@ -1457,41 +1458,47 @@
           if ((p.stock || 0) === 0) return;
           if (budget && p.price > budget) return;
 
-          const nm   = (p.name        || '').toLowerCase();
-          const desc = (p.description || '').toLowerCase();
-          const cat  = (p.category    || '').toLowerCase();
-          const taste= (p.taste       || '').toLowerCase();
-          const full = `${nm} ${desc} ${cat} ${taste}`;
+          const nm    = (p.name        || '').toLowerCase();
+          const desc  = (p.description || '').toLowerCase();
+          const cat   = (p.category    || '').toLowerCase();
+          const taste = (p.taste       || '').toLowerCase();
+          const full  = `${nm} ${desc} ${cat} ${taste}`;
 
-          let score = 0;
+          let nameScore  = 0;
+          let tasteScore = 0;
+          let catScore   = 0;
 
           // ── Name / keyword matching ──
-          if (searchStr && searchStr.length > 1) {
-            if (nm === searchStr)          score += 50;
-            else if (nm.includes(searchStr)) score += 20;
-            kws.forEach(k => { if (full.includes(k)) score += 3; });
+          if (hasKeyword) {
+            if (nm === searchStr)            nameScore += 50;
+            else if (nm.includes(searchStr)) nameScore += 20;
+            kws.forEach(k => { if (full.includes(k)) nameScore += 4; });
           }
 
-          // ── Taste matching ──
+          // ── Taste matching (bonus only) ──
           for (const t of tastes) {
             const tKws = TASTE_KEYWORDS[t] || [t];
-            if (tKws.some(k => full.includes(k))) score += 15;
+            if (tKws.some(k => full.includes(k))) tasteScore += 15;
           }
 
-          // ── Category matching ──
+          // ── Category matching (bonus only) ──
           for (const c of categories) {
-            if (cat === c.toLowerCase() || full.includes(c.toLowerCase())) score += 12;
-            // also check the CATEGORY_KEYWORDS list itself
+            if ((p.category || '') === c) catScore += 12;
             const catKws = CATEGORY_KEYWORDS[c] || [];
-            if (catKws.some(k => full.includes(k))) score += 8;
+            if (catKws.some(k => full.includes(k))) catScore += 6;
           }
 
-          // If query was purely taste/category (no keyword), any matching product counts
-          if (isTasteOrCatQuery && score === 0) return;
-          // If query had a keyword but score is still 0, skip
-          if (!isTasteOrCatQuery && score === 0) return;
-
-          res.push({ ...p, score });
+          // ── Decision logic ──
+          if (hasKeyword) {
+            // Specific search: product MUST match the keyword — taste/category only add bonus
+            if (nameScore === 0) return;
+            res.push({ ...p, score: nameScore + tasteScore + catScore });
+          } else if (isTasteOrCatOnly) {
+            // Pure taste/category browse: taste OR category must match
+            if (tasteScore === 0 && catScore === 0) return;
+            res.push({ ...p, score: tasteScore + catScore });
+          }
+          // if nothing typed at all, return nothing
         });
 
         res.sort((a, b) => b.score - a.score || a.price - b.price);
