@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WAROONG — Seller Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #1B4332;
+      --green-mid: #2D6A4F;
+      --green-light: #40916C;
+      --green-pale: #D8F3DC;
+      --orange: #F4721E;
+      --orange-dark: #C95A0C;
+      --orange-light: #F9A96E;
+      --orange-pale: #FFF3E8;
+      --gold: #F5C842;
+      --cream: #FEFAE0;
+      --cream-2: #F8F0D4;
+      --paper: #FFFDF7;
+      --ink: #1A1108;
+      --muted: #7A6245;
+      --red: #DC2626;
+      --red-pale: #FEE2E2;
+      --border: rgba(27,67,50,0.18);
+      --border-2: rgba(27,67,50,0.32);
+      --r: 14px;
+      --rlg: 20px;
+      --rpill: 999px;
+      --shadow-xs: 0 2px 8px rgba(27,67,50,0.1);
+      --shadow-md: 0 8px 28px rgba(27,67,50,0.15);
+      --shadow-lg: 0 24px 60px rgba(27,67,50,0.2);
+      --text: #1A1108;
+      --text-dim: #7A6245;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); }
+    body {
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 60 Q20 40 30 60 Q40 80 50 60 Q60 40 70 60 Q80 80 90 60 Q100 40 110 60' stroke='%231B4332' stroke-width='2.5' fill='none' opacity='0.05'/%3E%3Cpath d='M30 20 Q40 5 50 20 Q60 35 70 20 Q80 5 90 20' stroke='%23F4721E' stroke-width='2' fill='none' opacity='0.04'/%3E%3C/svg%3E");
+    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: var(--green-light); border-radius: 4px; }
+
+    /* STORE SETUP */
+    #store-setup { position:fixed; inset:0; z-index:9500; background:rgba(27,67,50,.75); display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px); }
+    #store-setup.open { display:flex; }
+    .ss-card { background:var(--paper); border-radius:var(--rlg); padding:36px 32px; width:100%; max-width:420px; box-shadow:var(--shadow-lg); border:2px solid var(--border); text-align:center; }
+    .ss-ico { font-size:48px; margin-bottom:10px; }
+    .ss-title { font-family:'Fraunces',serif; font-size:24px; font-weight:700; color:var(--text); margin-bottom:6px; }
+    .ss-sub { font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.5; }
+    .fi { width:100%; padding:11px 13px; border-radius:var(--r); border:1.5px solid var(--border); background:var(--cream); font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text); outline:none; transition:border-color .18s,box-shadow .18s; }
+    .fi::placeholder { color:var(--text-dim); opacity:0.5; }
+    .fi:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(27,67,50,0.15); background:white; }
+    .ss-card .fi { margin-bottom:14px; }
+    .btn-p { width:100%; padding:13px; border-radius:var(--rpill); border:none; background:var(--green); color:white; font-family:'Fraunces',serif; font-size:16px; font-weight:700; cursor:pointer; transition:all .18s; margin-top:4px; box-shadow:0 4px 18px rgba(27,67,50,.3); }
+    .btn-p:hover { background:var(--green-mid); transform:translateY(-1px); box-shadow:0 6px 24px rgba(27,67,50,.4); }
+
+    /* MAIN APP */
+    #sapp { display:none; height:100vh; flex-direction:column; }
+    #sapp.vis { display:flex; }
+    .topbar { height:62px; background:var(--green); border-bottom:3px solid var(--orange); display:flex; align-items:center; justify-content:space-between; padding:0 22px; flex-shrink:0; box-shadow:var(--shadow-md); }
+    .tb-l { display:flex; align-items:center; gap:10px; }
+    .tb-ico { width:34px; height:34px; border-radius:10px; background:var(--orange); display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 3px 10px rgba(244,114,30,.4); }
+    .tb-n { font-family:'Fraunces',serif; font-size:19px; font-weight:900; }
+    .tb-n .war { color:var(--orange); }
+    .tb-n .oong { color:white; }
+    .tb-n .studio-txt { color:rgba(255,255,255,0.65); font-size:14px; font-weight:400; font-family:'DM Sans',sans-serif; }
+    .seller-badge { padding:4px 13px; border-radius:var(--rpill); background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,.25); font-size:11px; font-weight:700; color:white; }
+    .rev-badge { padding:4px 13px; border-radius:var(--rpill); background:rgba(245,200,66,0.2); border:1px solid rgba(245,200,66,.4); font-size:11px; font-weight:700; color:var(--gold); font-family:'Fraunces',serif; }
+    .tb-r { display:flex; align-items:center; gap:9px; }
+    .tbbtn { padding:7px 14px; border-radius:var(--rpill); border:1.5px solid rgba(255,255,255,0.25); background:none; color:rgba(255,255,255,0.8); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; transition:all .18s; }
+    .tbbtn:hover { border-color:white; color:white; background:rgba(255,255,255,0.1); }
+
+    /* LAYOUT */
+    .studio-body { flex:1; display:grid; grid-template-columns:300px 1fr; overflow:hidden; }
+    .lpanel { background:var(--green); display:flex; flex-direction:column; overflow-y:auto; }
+    .lsec { padding:18px 16px; border-bottom:1px solid rgba(255,255,255,0.1); }
+    .lst { font-size:10px; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:13px; }
+    .stats-g { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .scard { background:rgba(255,255,255,0.08); border-radius:var(--r); padding:13px; border:1px solid rgba(255,255,255,0.12); text-align:center; transition:all .18s; }
+    .scard:hover { background:rgba(255,255,255,0.14); }
+    .sc-lbl { font-size:11px; color:rgba(255,255,255,0.55); margin-bottom:3px; }
+    .sc-val { font-size:22px; font-weight:700; color:white; font-family:'Fraunces',serif; }
+
+    /* UPLOAD FORM */
+    .uf input, .uf select, .uf textarea { width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); font-family:'DM Sans',sans-serif; font-size:13px; color:white; outline:none; margin-bottom:9px; transition:border-color .18s; }
+    .uf input::placeholder, .uf textarea::placeholder { color:rgba(255,255,255,0.35); }
+    .uf input:focus, .uf select:focus, .uf textarea:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(244,114,30,0.2); background:rgba(255,255,255,0.12); }
+    .uf select option { background:#1B4332; color:white; }
+    /* Taste pills in form */
+    .taste-row { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:9px; }
+    .taste-pill { padding:4px 11px; border-radius:var(--rpill); border:1.5px solid rgba(255,255,255,0.2); background:none; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:rgba(255,255,255,0.65); cursor:pointer; transition:all .14s; }
+    .taste-pill:hover { border-color:white; color:white; }
+    .taste-pill.sel { background:rgba(255,255,255,0.2); border-color:white; color:white; }
+    .taste-pill.sweet.sel { background:rgba(233,30,140,0.35); border-color:#E91E8C; }
+    .taste-pill.salty.sel { background:rgba(64,145,108,0.4); border-color:var(--green-light); }
+    .taste-pill.sour.sel { background:rgba(245,200,66,0.3); border-color:var(--gold); }
+    .taste-pill.spicy.sel { background:rgba(244,114,30,0.35); border-color:var(--orange); }
+    .taste-pill.savory.sel { background:rgba(45,106,79,0.5); border-color:var(--green-mid); }
+    .taste-label { font-size:10px; font-weight:700; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:.8px; margin-bottom:5px; }
+    .btn-up { width:100%; padding:11px; border-radius:var(--rpill); border:none; background:var(--orange); color:white; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all .18s; box-shadow:0 3px 10px rgba(244,114,30,.35); }
+    .btn-up:hover { background:var(--orange-dark); transform:translateY(-1px); box-shadow:0 5px 16px rgba(244,114,30,.5); }
+
+    /* AI GENERATE BTN */
+    .ai-gen-btn { width:100%; padding:10px; border-radius:var(--rpill); border:1.5px solid rgba(245,200,66,0.5); background:rgba(245,200,66,0.12); color:var(--gold); font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .18s; margin-bottom:9px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .ai-gen-btn:hover { background:rgba(245,200,66,0.22); }
+    .ai-gen-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .img-preview { width:100%; height:110px; border-radius:10px; object-fit:cover; margin-bottom:9px; border:2px solid rgba(255,255,255,0.2); display:none; }
+
+    /* RIGHT PANEL */
+    .rmain { overflow-y:auto; padding:22px 26px; display:flex; flex-direction:column; gap:18px; background:var(--cream); background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 60 Q20 40 30 60 Q40 80 50 60 Q60 40 70 60 Q80 80 90 60 Q100 40 110 60' stroke='%231B4332' stroke-width='2' fill='none' opacity='0.04'/%3E%3C/svg%3E"); }
+    .tabs { display:flex; gap:0; background:white; border-radius:13px; padding:4px; width:fit-content; border:1.5px solid var(--border); }
+    .tab { padding:8px 18px; border:none; background:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--muted); border-radius:10px; transition:all .18s; }
+    .tab.on { background:var(--green); color:white; font-weight:700; }
+    .tbadge { display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:var(--orange); color:white; font-size:10px; margin-left:4px; font-weight:700; }
+
+    /* CARDS */
+    .rcard { background:white; border:2px solid var(--border); border-radius:var(--rlg); padding:17px 18px; box-shadow:var(--shadow-xs); margin-bottom:12px; transition:all .18s; }
+    .rcard:hover { border-color:var(--green-light); box-shadow:var(--shadow-md); }
+    .rcard.ord { border-left:4px solid var(--green-light); }
+    .rcard.req { border-left:4px solid var(--orange); }
+    .rcard.prod-card { border-left:4px solid var(--gold); }
+    .rch { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; }
+    .rct { font-weight:700; font-size:15px; color:var(--text); font-family:'Fraunces',serif; }
+    .rcs { font-size:12px; color:var(--muted); margin-top:2px; }
+    .rtag { padding:4px 11px; border-radius:var(--rpill); font-size:11px; font-weight:700; }
+    .t-ord { background:var(--green-pale); color:var(--green); }
+    .t-req { background:var(--orange-pale); color:var(--orange-dark); }
+    .t-prod { background:#FEF9C3; color:#854D0E; }
+    .rcd { font-size:13px; color:var(--muted); margin:6px 0; line-height:1.7; }
+    .rcd b { color:var(--text); }
+    .rcd img.prod-thumb { width:52px; height:52px; border-radius:10px; object-fit:cover; float:left; margin-right:12px; margin-bottom:4px; border:2px solid var(--border); }
+    .rcacts { display:flex; gap:8px; margin-top:11px; flex-wrap:wrap; align-items:center; }
+    .btn-acc { padding:7px 16px; border-radius:var(--rpill); border:none; background:var(--green); color:white; font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .18s; }
+    .btn-acc:hover { background:var(--green-mid); transform:translateY(-1px); }
+    .btn-rej { padding:7px 16px; border-radius:var(--rpill); border:1.5px solid rgba(220,38,38,.4); background:none; color:var(--red); font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .btn-done { padding:7px 16px; border-radius:var(--rpill); border:none; background:var(--orange); color:white; font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .btn-edit { padding:7px 14px; border-radius:var(--rpill); border:1.5px solid var(--border); background:var(--cream); color:var(--green); font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .btn-del { padding:7px 14px; border-radius:var(--rpill); border:1.5px solid rgba(220,38,38,.35); background:none; color:var(--red); font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .status-chip { padding:4px 11px; border-radius:var(--rpill); font-size:11px; font-weight:700; }
+    .sc-ok { background:var(--green-pale); color:var(--green); }
+    .sc-no { background:var(--red-pale); color:var(--red); }
+    .sc-done { background:var(--cream-2); color:var(--muted); }
+    .edit-form { background:var(--cream); border-radius:var(--r); padding:12px; margin-top:10px; display:none; flex-direction:column; gap:8px; border:1.5px solid var(--border); }
+    .edit-form.open { display:flex; }
+    .edit-form input, .edit-form select { width:100%; padding:9px 11px; border-radius:9px; border:1.5px solid var(--border); background:white; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text); outline:none; }
+    .edit-form input:focus, .edit-form select:focus { border-color:var(--green); }
+    .edit-form input::placeholder { color:var(--muted); opacity:0.5; }
+    .edit-form select option { background:white; }
+    .edit-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .btn-save { padding:8px 16px; border-radius:var(--rpill); border:none; background:var(--green); color:white; font-size:12px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+    .es { text-align:center; padding:44px 20px; color:var(--muted); }
+    .es-ico { font-size:44px; margin-bottom:10px; }
+    .es p { font-size:14px; line-height:1.6; }
+    .tp { display:none; flex-direction:column; }
+    .tp.on { display:flex; }
+    .sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+    .sh h2 { font-family:'Fraunces',serif; font-size:22px; font-weight:700; color:var(--text); }
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--green); border:1px solid rgba(255,255,255,0.2); color:white; padding:10px 22px; border-radius:var(--rpill); font-size:13px; z-index:9999; opacity:0; transition:opacity .28s; pointer-events:none; white-space:nowrap; box-shadow:var(--shadow-md); }
+    .toast.show { opacity:1; }
+
+    /* Product preview card mini */
+    .prod-img-badge { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+    .prod-img-thumb { width:56px; height:56px; border-radius:10px; object-fit:cover; border:2px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyCbcZc_ttieYHNqgDQ-jUWU_GmTtxxXowA",
+      authDomain: "newwad-76f51.firebaseapp.com",
+      projectId: "newwad-76f51",
+      storageBucket: "newwad-76f51.firebasestorage.app",
+      messagingSenderId: "718634797726",
+      appId: "1:718634797726:web:b560cc9931ccf8a155c98f",
+      measurementId: "G-DC2FBP946Y"
+    };
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.fs = { doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, getDocs, serverTimestamp, orderBy };
+  </script>
+
+  <!-- STORE NAME SETUP -->
+  <div id="store-setup">
+    <div class="ss-card">
+      <div class="ss-ico">🏪</div>
+      <div class="ss-title">Set Up Your Store</div>
+      <div class="ss-sub">Welcome to Seller Studio! Give your store a name.<br>This is what buyers will see when browsing your products.</div>
+      <input class="fi" type="text" id="store-name-input" placeholder="e.g. Warung Padang Minang" maxlength="40" onkeydown="if(event.key==='Enter')saveStoreName()" />
+      <button class="btn-p" onclick="saveStoreName()">Open My Store →</button>
+    </div>
+  </div>
+
+  <!-- REQUEST OFFER MODAL -->
+  <div id="req-modal" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(27,67,50,.75);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);">
+    <div style="background:var(--paper);border-radius:var(--rlg);padding:28px 26px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);border:2px solid var(--border);">
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px;">Offer Matching Product</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Upload a product fulfilling this request.</div>
+      <div class="uf" style="--uf-light:1">
+        <input type="text" id="rpn" placeholder="Product name *" style="background:var(--cream);color:var(--text);border-color:var(--border);" />
+        <input type="number" id="rpp" placeholder="Price (Rp) *" style="background:var(--cream);color:var(--text);border-color:var(--border);" />
+        <input type="number" id="rpst" placeholder="Stock quantity *" style="background:var(--cream);color:var(--text);border-color:var(--border);" />
+        <select id="rpcat" style="background:var(--cream);color:var(--text);border-color:var(--border);">
+          <option value="">Category *</option>
+          <option value="Food">🍛 Food</option>
+          <option value="Drinks">🧋 Drinks</option>
+          <option value="Skincare">🧴 Skincare</option>
+          <option value="Fashion">👗 Fashion</option>
+          <option value="Shoes">👟 Shoes</option>
+          <option value="Sports">🏃 Sports</option>
+          <option value="Electronics">💻 Electronics</option>
+          <option value="Other">📦 Other</option>
+        </select>
+        <input type="text" id="rpd" placeholder="Description (optional)" style="background:var(--cream);color:var(--text);border-color:var(--border);" />
+        <input type="text" id="rpe" placeholder="Emoji (e.g. 🍛)" style="background:var(--cream);color:var(--text);border-color:var(--border);" />
+        <div class="taste-label" style="color:var(--muted)">Taste Profile (select all that apply):</div>
+        <div class="taste-row" id="req-taste-row">
+          <button type="button" class="taste-pill sweet" onclick="toggleReqTaste(this,'sweet')" style="background:none;color:var(--muted);border-color:var(--border);">🍭 Sweet</button>
+          <button type="button" class="taste-pill salty" onclick="toggleReqTaste(this,'salty')" style="background:none;color:var(--muted);border-color:var(--border);">🧂 Salty</button>
+          <button type="button" class="taste-pill sour" onclick="toggleReqTaste(this,'sour')" style="background:none;color:var(--muted);border-color:var(--border);">🍋 Sour</button>
+          <button type="button" class="taste-pill spicy" onclick="toggleReqTaste(this,'spicy')" style="background:none;color:var(--muted);border-color:var(--border);">🌶️ Spicy</button>
+          <button type="button" class="taste-pill savory" onclick="toggleReqTaste(this,'savory')" style="background:none;color:var(--muted);border-color:var(--border);">🍖 Savory</button>
+        </div>
+        <button class="ai-gen-btn" id="req-gen-btn" onclick="generateReqImage()" style="border-color:var(--orange);background:var(--orange-pale);color:var(--orange-dark);">✨ Auto-generate Product Photo with AI</button>
+        <img id="req-img-preview" class="img-preview" />
+        <input type="hidden" id="req-img-url" />
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-up" style="background:none;color:var(--muted);border:1.5px solid var(--border);" onclick="document.getElementById('req-modal').style.display='none'">Cancel</button>
+          <button class="btn-up" onclick="submitReqOffer()">Publish Offer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM MODAL -->
+  <div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(27,67,50,.75);align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);">
+    <div class="ss-card" style="text-align:center;max-width:320px;">
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;" id="cm-title"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;" id="cm-desc"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="fi" style="flex:1;cursor:pointer;color:var(--muted);background:var(--cream-2);" onclick="closeConfirmModal()">Cancel</button>
+        <button class="btn-up" style="flex:1;" id="cm-yes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="sapp">
+    <nav class="topbar">
+      <div class="tb-l">
+        <div class="tb-ico">🏪</div>
+        <div class="tb-n"><span class="war">War</span><span class="oong">oong</span> <span class="studio-txt">/ Studio</span></div>
+        <span class="seller-badge" id="seller-badge">Seller</span>
+        <span class="rev-badge">Revenue: <span id="rev-display">Rp 0</span></span>
+      </div>
+      <div class="tb-r">
+        <button class="tbbtn" onclick="exitToBuyer()">← Exit to Buyer</button>
+      </div>
+    </nav>
+
+    <div class="studio-body">
+      <div class="lpanel">
+        <div class="lsec">
+          <div class="lst">Dashboard</div>
+          <div class="stats-g">
+            <div class="scard"><div class="sc-lbl">Products</div><div class="sc-val" id="st-p">—</div></div>
+            <div class="scard"><div class="sc-lbl">Requests</div><div class="sc-val" id="st-r">—</div></div>
+            <div class="scard"><div class="sc-lbl">Orders</div><div class="sc-val" id="st-o">—</div></div>
+            <div class="scard"><div class="sc-lbl">Completed</div><div class="sc-val" id="st-done">—</div></div>
+          </div>
+        </div>
+        <div class="lsec">
+          <div class="lst">Add Product</div>
+          <div class="uf">
+            <input type="text" id="pn" placeholder="Product name *" oninput="clearGenImg()" />
+            <input type="number" id="pp" placeholder="Price (Rp) *" />
+            <input type="number" id="pst" placeholder="Stock quantity *" />
+            <select id="pcat">
+              <option value="">Category *</option>
+              <option value="Food">🍛 Food</option>
+              <option value="Drinks">🧋 Drinks</option>
+              <option value="Skincare">🧴 Skincare</option>
+              <option value="Fashion">👗 Fashion</option>
+              <option value="Shoes">👟 Shoes</option>
+              <option value="Sports">🏃 Sports</option>
+              <option value="Electronics">💻 Electronics</option>
+              <option value="Other">📦 Other</option>
+            </select>
+            <input type="text" id="pd" placeholder="Description (optional)" />
+            <input type="text" id="pe" placeholder="Emoji (e.g. 🍛)" />
+            <div class="taste-label">Taste Profile:</div>
+            <div class="taste-row" id="taste-row">
+              <button type="button" class="taste-pill sweet" onclick="toggleTaste(this,'sweet')">🍭 Sweet</button>
+              <button type="button" class="taste-pill salty" onclick="toggleTaste(this,'salty')">🧂 Salty</button>
+              <button type="button" class="taste-pill sour" onclick="toggleTaste(this,'sour')">🍋 Sour</button>
+              <button type="button" class="taste-pill spicy" onclick="toggleTaste(this,'spicy')">🌶️ Spicy</button>
+              <button type="button" class="taste-pill savory" onclick="toggleTaste(this,'savory')">🍖 Savory</button>
+            </div>
+            <button class="ai-gen-btn" id="gen-btn" onclick="generateProductImage()">✨ Auto-generate Photo with AI</button>
+            <img id="img-preview" class="img-preview" />
+            <input type="hidden" id="gen-img-url" />
+            <button class="btn-up" onclick="uploadProduct()">Add Product 📦</button>
+          </div>
+        </div>
+        <div class="lsec" style="font-size:11px;color:rgba(255,255,255,0.4);line-height:1.6;padding:14px 16px;">
+          💡 Add taste tags so buyers can find your food by flavor profile!
+        </div>
+      </div>
+
+      <div class="rmain">
+        <div class="tabs">
+          <button class="tab on" onclick="stab('req')" id="tab-req">Requests<span class="tbadge" id="b-req" style="display:none">0</span></button>
+          <button class="tab" onclick="stab('ord')" id="tab-ord">Orders<span class="tbadge" id="b-ord" style="display:none">0</span></button>
+          <button class="tab" onclick="stab('comp')" id="tab-comp">Complaints<span class="tbadge" id="b-comp" style="display:none">0</span></button>
+          <button class="tab" onclick="stab('prod')" id="tab-prod">My Products</button>
+        </div>
+
+        <div class="tp on" id="tp-req">
+          <div class="sh"><h2>Buyer Requests</h2></div>
+          <div id="req-list"></div>
+        </div>
+        <div class="tp" id="tp-ord">
+          <div class="sh"><h2>Incoming Orders</h2></div>
+          <div id="ord-list"></div>
+        </div>
+        <div class="tp" id="tp-comp">
+          <div class="sh"><h2>Buyer Complaints</h2></div>
+          <div id="comp-list"></div>
+        </div>
+        <div class="tp" id="tp-prod">
+          <div class="sh"><h2>My Products</h2></div>
+          <div id="prod-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const CAT_EMOJI = { Food:'🍛', Drinks:'🧋', Skincare:'🧴', Fashion:'👗', Shoes:'👟', Sports:'🏃', Electronics:'💻', Other:'📦' };
+    let me = null, refreshTimer = null;
+    let selectedTastes = new Set();
+    let selectedReqTastes = new Set();
+    const W = () => window.fs, D = () => window.db;
+    function waitForDb() { return new Promise(r => { if (window.db && window.fs) { r(); return; } const t = setInterval(() => { if (window.db && window.fs) { clearInterval(t); r(); } }, 50); }); }
+
+    /* ─── TASTE PILLS ─── */
+    window.toggleTaste = function(btn, taste) {
+      if (selectedTastes.has(taste)) { selectedTastes.delete(taste); btn.classList.remove('sel'); }
+      else { selectedTastes.add(taste); btn.classList.add('sel'); }
+    };
+    window.toggleReqTaste = function(btn, taste) {
+      if (selectedReqTastes.has(taste)) { selectedReqTastes.delete(taste); btn.classList.remove('sel'); }
+      else { selectedReqTastes.add(taste); btn.classList.add('sel'); }
+    };
+    function clearTastePills() {
+      selectedTastes.clear();
+      document.querySelectorAll('#taste-row .taste-pill').forEach(b => b.classList.remove('sel'));
+    }
+
+    /* ─── BOOT ─── */
+    window.addEventListener('load', async () => {
+      await waitForDb();
+      const email = sessionStorage.getItem('warung_seller_email');
+      const cached = sessionStorage.getItem('warung_seller_data');
+      if (!email) { window.location.href = 'index.html'; return; }
+      if (cached) { try { me = JSON.parse(cached); } catch (_) {} }
+      try {
+        const snap = await W().getDoc(W().doc(D(), 'users', email));
+        if (!snap.exists()) { window.location.href = 'index.html'; return; }
+        me = { ...snap.data(), email };
+        sessionStorage.setItem('warung_seller_data', JSON.stringify(me));
+      } catch (e) { if (!me) { window.location.href = 'index.html'; return; } }
+      enterStudio();
+    });
+
+    function enterStudio() {
+      document.getElementById('sapp').classList.add('vis');
+      document.getElementById('seller-badge').textContent = me.storeName || me.firstName || 'Seller';
+      document.getElementById('rev-display').textContent = 'Rp ' + (me.revenue || 0).toLocaleString('id-ID');
+      if (!me.storeName) {
+        document.getElementById('store-setup').classList.add('open');
+        setTimeout(() => document.getElementById('store-name-input').focus(), 200);
+      } else {
+        loadAll();
+        refreshTimer = setInterval(loadAll, 5000);
+      }
+    }
+
+    async function saveStoreName() {
+      const name = document.getElementById('store-name-input').value.trim();
+      if (!name || name.length < 2) { showToast('Enter a store name (min 2 chars)'); return; }
+      try {
+        await W().updateDoc(W().doc(D(), 'users', me.email), { storeName: name });
+        me.storeName = name;
+        sessionStorage.setItem('warung_seller_data', JSON.stringify(me));
+        document.getElementById('seller-badge').textContent = name;
+        document.getElementById('store-setup').classList.remove('open');
+        showToast('Store "' + name + '" is open! 🎉');
+        loadAll();
+        refreshTimer = setInterval(loadAll, 5000);
+      } catch (e) { showToast('Error: ' + e.message); console.error(e); }
+    }
+
+    function exitToBuyer() {
+      if (document.referrer && document.referrer.includes('index.html')) {
+        window.location.href = document.referrer;
+      } else {
+        window.location.href = 'index.html';
+      }
+    }
+
+    async function loadAll() {
+      if (!window.db || !me) return;
+      await Promise.all([loadRequests(), loadOrders(), loadComplaints(), loadProducts()]);
+      try {
+        const snap = await W().getDoc(W().doc(D(), 'users', me.email));
+        if (snap.exists()) { const rev = snap.data().revenue || 0; document.getElementById('rev-display').textContent = 'Rp ' + rev.toLocaleString('id-ID'); }
+      } catch (_) {}
+    }
+
+    /* ─── AI IMAGE GENERATION — Fixed with working Pollinations prompt ─── */
+    async function generateProductImage() {
+      const name = document.getElementById('pn').value.trim();
+      const cat = document.getElementById('pcat').value;
+      const desc = document.getElementById('pd').value.trim();
+      if (!name) { showToast('Enter a product name first'); return; }
+
+      const btn = document.getElementById('gen-btn');
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Generating...';
+
+      // Build a very specific prompt based on name, category, description
+      let promptParts = [name];
+      if (cat && cat !== 'Other') promptParts.push(cat.toLowerCase());
+      if (desc) promptParts.push(desc);
+
+      // Category-specific style hints for better results
+      const catStyles = {
+        Food: 'delicious food photography, overhead shot, natural lighting, restaurant quality, on wooden table',
+        Drinks: 'refreshing drink photography, condensation, colorful straw, bright background',
+        Skincare: 'skincare product flat lay, clean white background, soft lighting, minimal aesthetic',
+        Fashion: 'fashion product photography, clean background, well-lit, stylish',
+        Shoes: 'shoe product photography, clean background, professional',
+        Sports: 'sports product photography, dynamic, energetic',
+        Electronics: 'electronics product photography, clean white background, professional',
+        Other: 'product photography, clean background, professional quality'
+      };
+      const style = catStyles[cat] || 'professional product photography, clean background';
+      promptParts.push(style);
+
+      const promptText = promptParts.join(', ');
+      const seed = Math.floor(Math.random() * 99999);
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptText)}?width=512&height=512&seed=${seed}&nologo=true&enhance=true`;
+
+      try {
+        const img = document.getElementById('img-preview');
+        img.style.display = 'block';
+        img.src = '';
+        // Show loading state
+        img.style.background = 'linear-gradient(135deg, var(--cream-2), var(--green-pale))';
+
+        // Pre-fetch check
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Generation failed');
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        img.src = objectUrl;
+        document.getElementById('gen-img-url').value = url;
+        img.onload = () => { btn.disabled = false; btn.innerHTML = '✨ Regenerate Photo'; showToast('Photo generated! ✅'); };
+        img.onerror = () => { throw new Error('Image load failed'); };
+      } catch (e) {
+        // Fallback: try direct src assignment
+        const img = document.getElementById('img-preview');
+        img.src = url;
+        document.getElementById('gen-img-url').value = url;
+        img.onload = () => { btn.disabled = false; btn.innerHTML = '✨ Regenerate Photo'; showToast('Photo generated! ✅'); };
+        img.onerror = () => {
+          btn.disabled = false;
+          btn.innerHTML = '✨ Auto-generate Photo with AI';
+          img.style.display = 'none';
+          showToast('Could not generate — check connection & try again');
+        };
+      }
+    }
+
+    function clearGenImg() {
+      document.getElementById('img-preview').style.display='none';
+      document.getElementById('gen-img-url').value='';
+      document.getElementById('gen-btn').innerHTML='✨ Auto-generate Photo with AI';
+    }
+
+    async function generateReqImage() {
+      const name = document.getElementById('rpn').value.trim();
+      const cat = document.getElementById('rpcat').value;
+      const desc = document.getElementById('rpd').value.trim();
+      if (!name) { showToast('Enter a product name first'); return; }
+      const btn = document.getElementById('req-gen-btn');
+      btn.disabled = true; btn.innerHTML = '⏳ Generating...';
+
+      const catStyles = {
+        Food: 'delicious food photography, overhead shot, natural lighting, restaurant quality',
+        Drinks: 'refreshing drink photography, condensation, bright background',
+        Skincare: 'skincare product flat lay, clean white background, soft lighting',
+        Fashion: 'fashion product photography, clean background, well-lit',
+        Other: 'professional product photography, clean background'
+      };
+      const style = catStyles[cat] || catStyles['Other'];
+      let promptParts = [name];
+      if (cat) promptParts.push(cat.toLowerCase());
+      if (desc) promptParts.push(desc);
+      promptParts.push(style);
+
+      const seed = Math.floor(Math.random() * 99999);
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptParts.join(', '))}?width=512&height=512&seed=${seed}&nologo=true&enhance=true`;
+
+      const img = document.getElementById('req-img-preview');
+      img.style.display = 'block';
+      img.src = url;
+      document.getElementById('req-img-url').value = url;
+      img.onload = () => { btn.disabled = false; btn.innerHTML = '✨ Regenerate Photo'; };
+      img.onerror = () => { btn.disabled = false; btn.innerHTML = '✨ Auto-generate Photo with AI'; showToast('Try again — generation timed out'); };
+    }
+
+    /* ─── REQUESTS ─── */
+    async function loadRequests() {
+      try {
+        const q = W().query(W().collection(D(), 'buyer_requests'), W().where('status', '==', 'open'));
+        const snap = await W().getDocs(q);
+        const items = []; snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+        document.getElementById('st-r').textContent = items.length;
+        const b = document.getElementById('b-req');
+        if (items.length) { b.textContent = items.length; b.style.display = 'inline-flex'; } else b.style.display = 'none';
+        const el = document.getElementById('req-list');
+        if (!items.length) { el.innerHTML = '<div class="es"><div class="es-ico">🌿</div><p>No buyer requests yet.<br>They appear when buyers search for something not in stock.</p></div>'; return; }
+        el.innerHTML = '';
+        items.forEach(r => {
+          const div = document.createElement('div'); div.className = 'rcard req';
+          div.innerHTML = `
+            <div class="rch">
+              <div><div class="rct">Buyer looking for: "${r.query}"</div><div class="rcs">From ${r.buyerName||'Anonymous'} · ${r.createdAt?.toDate?.()?.toLocaleString()||'recently'}</div></div>
+              <span class="rtag t-req">Open</span>
+            </div>
+            ${r.description?'<div class="rcd"><b>Description:</b> '+r.description+'</div>':''}
+            <div class="rcacts">
+              <button class="btn-done" onclick="openOfferModal('${r.id}','${r.query.replace(/'/g,"\\'")}')">+ Upload Offer</button>
+              <button class="btn-rej" onclick="resolveRequest('${r.id}','rejected')">✗ Reject</button>
+            </div>`;
+          el.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function resolveRequest(id, status) {
+      if (status === 'rejected') {
+        openConfirmModal('Reject Request', 'Reject this buyer request?', async () => {
+          try { await W().updateDoc(W().doc(D(), 'buyer_requests', id), { status }); showToast('Request rejected'); loadRequests(); }
+          catch (e) { showToast('Error: ' + e.message); }
+        });
+      } else {
+        try { await W().updateDoc(W().doc(D(), 'buyer_requests', id), { status }); showToast('Done ✅'); loadRequests(); }
+        catch (e) { showToast('Error: ' + e.message); }
+      }
+    }
+
+    /* ─── ORDERS ─── */
+    async function loadOrders() {
+      try {
+        const q = W().query(W().collection(D(), 'orders'), W().where('sellerId', '==', me.email));
+        const snap = await W().getDocs(q);
+        const items = []; snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+        document.getElementById('st-o').textContent = items.length;
+        const done = items.filter(o => o.status === 'Completed').length;
+        document.getElementById('st-done').textContent = done;
+        const pending = items.filter(o => o.status === 'Waiting Confirmation').length;
+        const b = document.getElementById('b-ord');
+        if (pending) { b.textContent = pending; b.style.display = 'inline-flex'; } else b.style.display = 'none';
+        const el = document.getElementById('ord-list');
+        if (!items.length) { el.innerHTML = '<div class="es"><div class="es-ico">📦</div><p>No orders yet.</p></div>'; return; }
+        el.innerHTML = '';
+        items.sort((a, b) => a.status === 'Waiting Confirmation' ? -1 : b.status === 'Waiting Confirmation' ? 1 : 0);
+        items.forEach(o => {
+          const div = document.createElement('div'); div.className = 'rcard ord';
+          const sc = o.status === 'Confirmed' ? 'sc-ok' : o.status === 'Completed' ? 'sc-done' : o.status === 'Rejected' ? 'sc-no' : '';
+          const payBadge = o.paymentMethod === 'cash' ? '<span style="color:#854D0E;font-size:11px;">💵 Cash on delivery</span>' : '<span style="color:var(--green);font-size:11px;">📱 E-Money</span>';
+          div.innerHTML = `
+            <div class="rch">
+              <div><div class="rct">${o.productName}</div><div class="rcs">By ${o.buyerName} · ${o.createdAt?.toDate?.()?.toLocaleString()||''}</div></div>
+              <span class="rtag t-ord">${o.qty>1?o.qty+'× ':''}Order</span>
+            </div>
+            <div class="rcd">
+              <b>Total:</b> Rp ${(o.totalPrice||0).toLocaleString('id-ID')} · ${payBadge}<br>
+              <b>Deliver to:</b> ${o.addr?.street||''}, ${o.addr?.city||''}<br>
+              <b>Buyer contact:</b> ${o.buyerPhone||'—'}
+            </div>
+            <div class="rcacts">
+              ${o.status==='Waiting Confirmation'
+                ? `<button class="btn-acc" onclick="respondOrder('${o.id}','Confirmed')">✓ Confirm</button><button class="btn-rej" onclick="respondOrder('${o.id}','Rejected')">✗ Reject</button>`
+                : `<span class="status-chip ${sc}">${o.status}</span>`}
+            </div>`;
+          el.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    function respondOrder(orderId, status) {
+      openConfirmModal(
+        status==='Confirmed'?'Confirm Order':'Reject Order',
+        status==='Confirmed'?'Accept this order?':'Reject this order and refund the buyer?',
+        async () => {
+          try {
+            await W().updateDoc(W().doc(D(), 'orders', orderId), { status });
+            if (status === 'Rejected') {
+              const ordSnap = await W().getDoc(W().doc(D(), 'orders', orderId));
+              if (ordSnap.exists()) {
+                const o = ordSnap.data();
+                if (o.paymentMethod !== 'cash') {
+                  const buyerSnap = await W().getDoc(W().doc(D(), 'users', o.buyerEmail));
+                  if (buyerSnap.exists()) {
+                    const buyer = buyerSnap.data();
+                    await W().updateDoc(W().doc(D(), 'users', o.buyerEmail), { balance: (buyer.balance||0) + o.totalPrice });
+                  }
+                }
+                const prodSnap = await W().getDoc(W().doc(D(), 'products', o.productId));
+                if (prodSnap.exists()) {
+                  const curStock = prodSnap.data().stock || 0;
+                  await W().updateDoc(W().doc(D(), 'products', o.productId), { stock: curStock + (o.qty||1) });
+                }
+              }
+            }
+            showToast(status==='Confirmed'?'Order confirmed ✅':'Order rejected and refunded');
+            loadOrders();
+          } catch (e) { showToast('Error: '+e.message); console.error(e); }
+        }
+      );
+    }
+
+    /* ─── COMPLAINTS ─── */
+    async function loadComplaints() {
+      try {
+        const q = W().query(W().collection(D(), 'orders'), W().where('sellerId','==',me.email), W().where('status','==','Complained'));
+        const snap = await W().getDocs(q);
+        const items = []; snap.forEach(d => items.push({ id:d.id,...d.data() }));
+        const b = document.getElementById('b-comp');
+        if (items.length) { b.textContent = items.length; b.style.display = 'inline-flex'; } else b.style.display = 'none';
+        const el = document.getElementById('comp-list');
+        if (!items.length) { el.innerHTML = '<div class="es"><div class="es-ico">💬</div><p>No complaints.</p></div>'; return; }
+        el.innerHTML = '';
+        items.forEach(o => {
+          const div = document.createElement('div'); div.className = 'rcard ord'; div.style.borderLeftColor = 'var(--red)';
+          div.innerHTML = `
+            <div class="rch">
+              <div><div class="rct">${o.productName}</div><div class="rcs">By ${o.buyerName} · ${o.createdAt?.toDate?.()?.toLocaleString()||''}</div></div>
+              <span class="rtag sc-no">Complaint</span>
+            </div>
+            <div class="rcd">
+              <b>Issue with order of ${o.qty} pcs</b><br>
+              <b>Buyer Phone:</b> <span style="font-size:15px;font-weight:bold;color:var(--orange);">${o.buyerPhone||'—'}</span><br>
+              <b>Total:</b> Rp ${(o.totalPrice||0).toLocaleString('id-ID')}
+            </div>
+            <div class="rcacts" style="margin-top:14px;">
+              <button class="btn-acc" onclick="resolveComp('${o.id}','Completed',${o.totalPrice||0})">✓ Resolve (Complete)</button>
+              <button class="btn-rej" onclick="resolveComp('${o.id}','Refunded',${o.totalPrice||0},'${o.buyerEmail||''}','${o.paymentMethod||'emoney'}')">🔄 Refund Buyer</button>
+            </div>`;
+          el.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    function resolveComp(ordId, status, totalPrice, buyerEmail, payMethod) {
+      openConfirmModal('Resolve Complaint', "Are you sure you want to " + (status==='Completed'?"mark as resolved?":"refund the buyer?"), async () => {
+        try {
+          await W().updateDoc(W().doc(D(), 'orders', ordId), { status });
+          if (status === 'Refunded' && buyerEmail && payMethod !== 'cash') {
+            const buyerSnap = await W().getDoc(W().doc(D(), 'users', buyerEmail));
+            if (buyerSnap.exists()) {
+              const buyer = buyerSnap.data();
+              await W().updateDoc(W().doc(D(), 'users', buyerEmail), { balance: (buyer.balance||0) + totalPrice });
+            }
+          } else if (status === 'Completed') {
+            await W().updateDoc(W().doc(D(), 'users', me.email), { revenue: (me.revenue||0) + totalPrice });
+            me.revenue = (me.revenue||0) + totalPrice;
+            document.getElementById('rev-display').textContent = 'Rp ' + me.revenue.toLocaleString('id-ID');
+          }
+          showToast(status==='Completed'?'Complaint resolved ✅':'Order refunded');
+          loadComplaints(); loadOrders();
+        } catch (e) { showToast('Error: '+e.message); console.error(e); }
+      });
+    }
+
+    /* ─── PRODUCTS ─── */
+    async function loadProducts() {
+      try {
+        const q = W().query(W().collection(D(), 'products'), W().where('sellerId','==',me.email));
+        const snap = await W().getDocs(q);
+        const items = []; snap.forEach(d => items.push({ id:d.id,...d.data() }));
+        document.getElementById('st-p').textContent = items.length;
+        const el = document.getElementById('prod-list');
+        if (!items.length) { el.innerHTML = '<div class="es"><div class="es-ico">📦</div><p>No products yet.<br>Add your first one using the form on the left!</p></div>'; return; }
+        el.innerHTML = '';
+        items.forEach(p => {
+          const div = document.createElement('div'); div.className = 'rcard prod-card';
+          const tasteTags = (p.taste||'').split(',').map(t=>t.trim()).filter(Boolean);
+          const tasteHtml = tasteTags.map(t=>`<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:var(--green-pale);color:var(--green-mid);font-size:10px;font-weight:700;margin-right:3px;">${t}</span>`).join('');
+          const imgHtml = p.imageUrl ? `<img src="${p.imageUrl}" class="prod-thumb" />` : '';
+          div.innerHTML = `
+            <div class="rch">
+              <div>
+                <div class="rct">${p.emoji||CAT_EMOJI[p.category]||'📦'} ${p.name}</div>
+                <div class="rcs">${p.category} · Stock: ${p.stock} pcs</div>
+              </div>
+              <span class="rtag t-prod">Rp ${Number(p.price).toLocaleString('id-ID')}</span>
+            </div>
+            ${p.imageUrl||p.description||tasteHtml?`<div class="rcd">${imgHtml}${p.description||''}${tasteHtml?'<div style="margin-top:5px;">'+tasteHtml+'</div>':''}</div>`:''} 
+            <div class="rcacts">
+              <button class="btn-edit" onclick="toggleEdit('${p.id}')">✏️ Edit</button>
+              <button class="btn-del" onclick="deleteProduct('${p.id}','${p.name.replace(/'/g,"\\'")}')">🗑️ Delete</button>
+            </div>
+            <div class="edit-form" id="ef-${p.id}">
+              <input type="text" id="en-${p.id}" value="${p.name||''}" placeholder="Name"/>
+              <div class="edit-row">
+                <input type="number" id="ep-${p.id}" value="${p.price||''}" placeholder="Price (Rp)"/>
+                <input type="number" id="est-${p.id}" value="${p.stock||''}" placeholder="Stock"/>
+              </div>
+              <input type="text" id="ed-${p.id}" value="${p.description||''}" placeholder="Description"/>
+              <input type="text" id="ee-${p.id}" value="${p.emoji||''}" placeholder="Emoji"/>
+              <div style="display:flex;gap:8px">
+                <button class="btn-save" onclick="saveEdit('${p.id}')">Save Changes</button>
+                <button class="btn-del" style="border:none;background:var(--cream-2);color:var(--muted)" onclick="toggleEdit('${p.id}')">Cancel</button>
+              </div>
+            </div>`;
+          el.appendChild(div);
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    function toggleEdit(id) { document.getElementById('ef-'+id).classList.toggle('open'); }
+
+    async function saveEdit(id) {
+      const name=document.getElementById('en-'+id).value.trim();
+      const price=Number(document.getElementById('ep-'+id).value);
+      const stock=Number(document.getElementById('est-'+id).value);
+      const desc=document.getElementById('ed-'+id).value.trim();
+      const emoji=document.getElementById('ee-'+id).value.trim();
+      if(!name||!price){showToast('Name and price required');return;}
+      try {
+        await W().updateDoc(W().doc(D(),'products',id),{name,price,stock,description:desc,emoji});
+        showToast('Product updated ✅'); loadProducts();
+      } catch(e){showToast('Error: '+e.message);console.error(e);}
+    }
+
+    function deleteProduct(id, name) {
+      openConfirmModal('Delete Product', `Delete "${name}"? This cannot be undone.`, async () => {
+        try { await W().deleteDoc(W().doc(D(),'products',id)); showToast('Product deleted'); loadProducts(); }
+        catch(e){showToast('Error: '+e.message);}
+      });
+    }
+
+    async function uploadProduct() {
+      const name=document.getElementById('pn').value.trim();
+      const price=document.getElementById('pp').value.trim();
+      const stock=document.getElementById('pst').value.trim();
+      const cat=document.getElementById('pcat').value;
+      const desc=document.getElementById('pd').value.trim();
+      const emoji=document.getElementById('pe').value.trim();
+      const imageUrl=document.getElementById('gen-img-url').value||'';
+      const taste=[...selectedTastes].join(',');
+      if(!name||!price||!cat){showToast('Name, price and category required');return;}
+      try {
+        await W().addDoc(W().collection(D(),'products'),{
+          name, price:Number(price), stock:Number(stock)||0,
+          category:cat, description:desc,
+          emoji:emoji||CAT_EMOJI[cat]||'📦',
+          imageUrl,
+          taste,
+          sellerId:me.email,
+          sellerName:me.storeName||me.name||me.firstName,
+          createdAt:W().serverTimestamp()
+        });
+        ['pn','pp','pst','pd','pe'].forEach(id=>document.getElementById(id).value='');
+        document.getElementById('pcat').value='';
+        clearGenImg();
+        clearTastePills();
+        showToast('Product added! 📦'); loadProducts();
+      } catch(e){showToast('Error: '+e.message);console.error(e);}
+    }
+
+    /* ─── TABS ─── */
+    function stab(t) {
+      ['req','ord','comp','prod'].forEach(x=>{
+        document.getElementById('tab-'+x).classList.toggle('on',x===t);
+        document.getElementById('tp-'+x).classList.toggle('on',x===t);
+      });
+    }
+
+    /* ─── TOAST & MODAL ─── */
+    function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+    let confirmCallback=null;
+    function openConfirmModal(title,desc,onYes){
+      document.getElementById('cm-title').textContent=title;
+      document.getElementById('cm-desc').textContent=desc;
+      confirmCallback=onYes;
+      document.getElementById('confirm-modal').style.display='flex';
+    }
+    window.closeConfirmModal=function(){document.getElementById('confirm-modal').style.display='none';confirmCallback=null;};
+    document.getElementById('cm-yes').addEventListener('click',()=>{if(confirmCallback)confirmCallback();closeConfirmModal();});
+
+    /* ─── OFFER MODAL ─── */
+    let currentReqId=null;
+    function openOfferModal(reqId,query){
+      currentReqId=reqId;
+      document.getElementById('rpn').value=query;
+      document.getElementById('rpp').value='';
+      document.getElementById('rpst').value='1';
+      document.getElementById('rpcat').value='';
+      document.getElementById('rpd').value='';
+      document.getElementById('rpe').value='';
+      document.getElementById('req-img-preview').style.display='none';
+      document.getElementById('req-img-url').value='';
+      document.getElementById('req-gen-btn').innerHTML='✨ Auto-generate Product Photo with AI';
+      document.getElementById('req-gen-btn').disabled=false;
+      selectedReqTastes.clear();
+      document.querySelectorAll('#req-taste-row .taste-pill').forEach(b=>b.classList.remove('sel'));
+      document.getElementById('req-modal').style.display='flex';
+    }
+
+    async function submitReqOffer(){
+      if(!currentReqId) return;
+      const name=document.getElementById('rpn').value.trim();
+      const price=document.getElementById('rpp').value.trim();
+      const stock=document.getElementById('rpst').value.trim();
+      const cat=document.getElementById('rpcat').value;
+      const desc=document.getElementById('rpd').value.trim();
+      const emoji=document.getElementById('rpe').value.trim();
+      const imageUrl=document.getElementById('req-img-url').value||'';
+      const taste=[...selectedReqTastes].join(',');
+      if(!name||!price||!cat){showToast('Name, price and category required');return;}
+      try {
+        await W().addDoc(W().collection(D(),'products'),{
+          name, price:Number(price), stock:Number(stock)||0,
+          category:cat, description:desc,
+          emoji:emoji||CAT_EMOJI[cat]||'📦',
+          imageUrl,
+          taste,
+          sellerId:me.email,
+          sellerName:me.storeName||me.name||me.firstName,
+          createdAt:W().serverTimestamp()
+        });
+        await W().updateDoc(W().doc(D(),'buyer_requests',currentReqId),{status:'completed'});
+        document.getElementById('req-modal').style.display='none';
+        currentReqId=null;
+        showToast('Offer published! 🎉'); loadProducts(); loadRequests();
+      } catch(e){showToast('Error: '+e.message);console.error(e);}
+    }
+  </script>
+</body>
+</html>
