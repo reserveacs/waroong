@@ -1244,7 +1244,7 @@
       const text=ta.value.trim(); if(!text) return;
       ta.value=''; ta.style.height='auto';
       addUser(text); addTyp();
-      const segs=parseQ(text);
+      const segs = await parseQ(text);
       const groups=await Promise.all(segs.map(async seg=>({seg,products:await searchP(seg.keyword,seg.budget,seg.tastes||[],seg.categories||[]),qty:seg.qty})));
       rmTyp(); renderResults(groups);
     }
@@ -1374,7 +1374,7 @@
     }
 
     /* ─── PARSER ─── */
-    /* ─── TASTE / CATEGORY / PRICE MAPS ─── */
+    /* ─── TASTE / CATEGORY MAPS (used by filter bar & fallback parser) ─── */
     const TASTE_KEYWORDS = {
       sweet:  ['sweet','manis','gula','coklat','chocolate','cake','kue','dessert','es krim','ice cream','pudding','sirup','madu','honey','susu','milk','teh manis','bubble','boba','donat','donut','waffle','pancake'],
       salty:  ['salty','asin','gurih','keripik','chips','snack','kripik','crackers','kacang','nuts','pretzel'],
@@ -1382,7 +1382,6 @@
       spicy:  ['spicy','pedas','cabai','cabe','chili','sambal','balado','hot','rica','siracha','pedes'],
       savory: ['savory','gurih','umami','nasi','rice','mie','mee','pasta','ayam','chicken','daging','beef','ikan','fish','seafood','udang','shrimp','bakso','soto','rendang','opor','gulai','sup','soup','sate','satay','kebab','burger','sandwich','pizza','goreng','fried','bakar','grilled']
     };
-
     const CATEGORY_KEYWORDS = {
       Food:        ['food','makanan','makan','eat','meal','snack','jajan','cemilan','lauk','nasi','mie','rice'],
       Drinks:      ['drink','minuman','minum','beverage','juice','jus','teh','tea','kopi','coffee','susu','milk','soda','air','water','es','ice','smoothie','boba','bubble'],
@@ -1393,53 +1392,90 @@
       Electronics: ['electronics','elektronik','gadget','hp','handphone','phone','laptop','charger','kabel','cable','earphone','headphone','speaker','powerbank']
     };
 
-    // Extract taste signals, category signals, and budget from a raw query segment
-    function parseQ(raw) {
+    /* ─── GEMINI FLASH — AI ORDER PARSER ─── */
+    const GEMINI_KEY = 'AIzaSyBLo0HT3QunjTNwNwv4Q6Uy-jEY7u8Jt3E';
+
+    async function parseWithAI(raw) {
+      const prompt = `You are a food order parser for an Indonesian marketplace app called Waroong.
+Parse the user's message into a JSON array of order items.
+
+Each item must have:
+- "keyword": the product name or search term (string, cleaned up, in lowercase). If the user only says a taste/category without a specific name, leave this as empty string "".
+- "qty": quantity as integer (default 1)
+- "budget": max price in Rupiah as integer or null if not mentioned. Convert "k" or "rb" or "ribu" to full number (e.g. 25k = 25000).
+- "tastes": array of detected taste profiles from: ["sweet","salty","sour","spicy","savory"]. Empty array if none.
+- "categories": array of detected product categories from: ["Food","Drinks","Skincare","Fashion","Shoes","Sports","Electronics"]. Empty array if none.
+
+Rules:
+- Handle mixed Indonesian/English naturally
+- "goreng2" means "goreng goreng" = fried food, qty context dependent
+- "yang pedes" = spicy taste
+- "yang manis" = sweet taste  
+- "yang asin" = salty taste
+- "minuman" = Drinks category
+- "makanan" = Food category
+- Strip filler words like "dong", "deh", "aja", "mau", "cari", "kasih"
+- If user says "2 nasi goreng" keyword="nasi goreng", qty=2
+- If user says "salty food below 25k" keyword="", tastes=["salty"], categories=["Food"], budget=25000
+- If user says "es teh jeruk" keyword="es teh jeruk", tastes=[], categories=[]
+
+Respond ONLY with a valid JSON array, no explanation, no markdown, no backticks.
+
+User message: "${raw.replace(/"/g, "'")}"`
+
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 512 }
+            })
+          }
+        );
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        // Ensure all fields exist
+        return parsed.map(item => ({
+          keyword:    (item.keyword    || '').toLowerCase().trim(),
+          qty:        parseInt(item.qty) || 1,
+          budget:     item.budget ? parseInt(item.budget) : null,
+          tastes:     Array.isArray(item.tastes)     ? item.tastes     : [],
+          categories: Array.isArray(item.categories) ? item.categories : []
+        }));
+      } catch (e) {
+        console.warn('Gemini parse failed, falling back to manual parser:', e);
+        return parseQFallback(raw);
+      }
+    }
+
+    // Fallback manual parser (used if AI fails / offline)
+    function parseQFallback(raw) {
       return raw.toLowerCase().split(/\b(?:and|dan|,|&|;|\+)\b/).map(s=>s.trim()).filter(Boolean).map(seg=>{
-        // Qty
-        const qm = seg.match(/\bx?(\d{1,2})\b/), qty = qm ? parseInt(qm[1]) : 1;
-
-        // Budget — supports: "under 25k", "max 25000", "below 25k", "25rb", "25ribu", "dibawah 25k", "<25000"
-        const bm = seg.match(/(?:under|max|below|bawah|maksimal|dibawah|kurang dari|<)\s*(?:rp\.?\s*)?(\d+(?:[.,]\d+)?)\s*(k|rb|ribu)?\b/);
-        let budget = null;
-        if (bm) {
-          budget = parseFloat(bm[1].replace(',', '.'));
-          if ((bm[2] === 'k' || bm[2] === 'rb' || bm[2] === 'ribu') && budget < 10000) budget *= 1000;
-        }
-        // plain "25k" or "25rb" style
-        if (!budget) {
-          const b2 = seg.match(/\b(\d+)\s*(k|rb|ribu)\b/);
-          if (b2) { budget = parseInt(b2[1]); if (budget < 10000) budget *= 1000; }
-        }
-        // plain number >= 1000 after removing price-word clutter
-        if (!budget) {
-          const b3 = seg.match(/\brp\.?\s*(\d{4,})\b/);
-          if (b3) budget = parseInt(b3[1]);
-        }
-
-        // Detect taste signals in this segment
-        const tastes = [];
-        for (const [taste, kws] of Object.entries(TASTE_KEYWORDS)) {
-          if (kws.some(k => seg.includes(k))) tastes.push(taste);
-        }
-
-        // Detect category signals
-        const categories = [];
-        for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS)) {
-          if (kws.some(k => seg.includes(k))) categories.push(cat);
-        }
-
-        // Clean keyword: remove numbers, budget phrases, taste/category trigger words so we don't pass them literally
-        let kw = seg
-          .replace(/(?:under|max|below|bawah|maksimal|dibawah|kurang dari|<)\s*(?:rp\.?\s*)?\d+(?:[.,]\d+)?\s*(?:k|rb|ribu)?\b/g, '')
-          .replace(/\brp\.?\s*\d+\b/g, '')
-          .replace(/\b\d+\s*(?:k|rb|ribu)\b/g, '')
-          .replace(/\bx?\d+\b/g, '')
-          .replace(/\b(i want|aku mau|mau|cari|find|search|kasih|berikan|show|tampilkan|sesuatu yang|something|any|ada gak|ada tidak)\b/g, '')
-          .replace(/\s+/g, ' ').trim();
-
-        return { keyword: kw, qty, budget, tastes, categories };
+        const qm=seg.match(/\bx?(\d{1,2})\b/),qty=qm?parseInt(qm[1]):1;
+        const bm=seg.match(/(?:under|max|below|bawah|maksimal|dibawah|<)\s*(?:rp\.?\s*)?(\d+(?:[.,]\d+)?)\s*(k|rb|ribu)?\b/);
+        let budget=null;
+        if(bm){budget=parseFloat(bm[1].replace(',','.'));if((bm[2]==='k'||bm[2]==='rb'||bm[2]==='ribu')&&budget<10000)budget*=1000;}
+        if(!budget){const b2=seg.match(/\b(\d+)\s*(k|rb|ribu)\b/);if(b2){budget=parseInt(b2[1]);if(budget<10000)budget*=1000;}}
+        const tastes=[];
+        for(const [t,kws] of Object.entries(TASTE_KEYWORDS)){if(kws.some(k=>seg.includes(k)))tastes.push(t);}
+        const categories=[];
+        for(const [c,kws] of Object.entries(CATEGORY_KEYWORDS)){if(kws.some(k=>seg.includes(k)))categories.push(c);}
+        let kw=seg
+          .replace(/(?:under|max|below|bawah|maksimal|dibawah|<)\s*(?:rp\.?\s*)?\d+(?:[.,]\d+)?\s*(?:k|rb|ribu)?\b/g,'')
+          .replace(/\brp\.?\s*\d+\b/g,'').replace(/\b\d+\s*(?:k|rb|ribu)\b/g,'').replace(/\bx?\d+\b/g,'')
+          .replace(/\b(i want|aku mau|mau|cari|find|kasih|berikan|show|tampilkan|sesuatu yang|something|any|ada gak|dong|deh|aja)\b/g,'')
+          .replace(/\s+/g,' ').trim();
+        return {keyword:kw,qty,budget,tastes,categories};
       });
+    }
+
+    async function parseQ(raw) {
+      return await parseWithAI(raw);
     }
 
     /* ─── PRODUCT SEARCH — taste + category + name + price aware ─── */
